@@ -18,7 +18,6 @@
             --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
             --error-bg: #5a2222;
             --ovf-color: #ff5555;
-            --result-color: #4dff4d; /* Bright Green */
         }
 
         body {
@@ -184,27 +183,6 @@
             font-weight: bold;
         }
 
-        /* Multi-Base Result Line */
-        .result-bar {
-            height: 20px;
-            min-height: 20px;
-            font-family: var(--font-mono);
-            color: var(--result-color);
-            font-size: 0.85rem;
-            
-            /* Center Alignment & Spacing */
-            display: flex;
-            justify-content: center; /* Center horizontally */
-            align-items: center;
-            gap: 2rem; /* Space between the 3 versions */
-            
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-top: -5px; 
-            padding-bottom: 5px;
-        }
-
         .keypad {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -326,7 +304,6 @@
         </div>
 
         <div class="status-bar" id="opStatus"></div>
-        <div class="result-bar" id="multiResult"></div>
     </div>
 
     <div class="calc-pad">
@@ -384,7 +361,6 @@
     const elDec = document.getElementById('decInput');
     const elBin = document.getElementById('binInput');
     const elStatus = document.getElementById('opStatus');
-    const elMultiResult = document.getElementById('multiResult');
     const keys = document.querySelectorAll('.keypad button[data-val]');
 
     /* --- Helpers --- */
@@ -454,33 +430,6 @@
         } else {
             return formatBigInt(val) + "<sub>D</sub>";
         }
-    }
-
-    // Update Function for the Result Bar with Spans for separation
-    function updateMultiResult(val) {
-        if (val === null) {
-            elMultiResult.innerHTML = '';
-            return;
-        }
-        const mask = getMask();
-        const maskedVal = val & mask;
-
-        // Hex (grouped but not padded)
-        let rawHex = maskedVal.toString(16).toUpperCase();
-        let hex = formatDisplayString(rawHex, 16, false, true);
-
-        // Bin (grouped but not padded)
-        let rawBin = maskedVal.toString(2);
-        let bin = formatDisplayString(rawBin, 2, false, true);
-
-        // Dec
-        let dec = formatBigInt(maskedVal);
-
-        elMultiResult.innerHTML = `
-            <span>HEX: ${hex}</span>
-            <span>DEC: ${dec}</span>
-            <span>BIN: ${bin}</span>
-        `;
     }
 
     /* --- Input Guards --- */
@@ -822,7 +771,6 @@
             };
             
             updateStatusText(resultForDisplay);
-            updateMultiResult(finalObj.val); 
             
             currentBigInt = finalObj.val;
             expressionQueue = []; 
@@ -837,7 +785,6 @@
                 radix: radixMap[activeInputId] 
             });
             updateStatusText({}); 
-            updateMultiResult(null); 
             updateInputs('all');
         }
     }
@@ -849,7 +796,6 @@
         errorState = null;
         elStatus.innerHTML = ''; 
         elStatus.classList.remove('error-text');
-        updateMultiResult(null); 
         
         elHex.value = '0'; elDec.value = '0'; elBin.value = '0';
         elHex.setAttribute('data-last', '0');
