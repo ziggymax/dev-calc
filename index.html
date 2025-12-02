@@ -6,7 +6,7 @@
     <title>Programmer's Calculator</title>
     <style>
         :root {
-            --bg-color: #e8e8e8; 
+            --bg-color: #e8e8e8;
             --panel-color: #1e1e1e;
             --text-color: #e0e0e0;
             --accent-color: #3794ff;
@@ -29,16 +29,17 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            padding: 0; 
+            padding: 0;
         }
 
         .calculator {
             background-color: var(--panel-color);
             padding: 20px;
             border-radius: 12px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.7); 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
             width: 100%;
-            max-width: 850px; 
+            /* UPDATED: Increased width to comfortably fit 79 characters (64 bits + spaces) */
+            max-width: 950px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
@@ -56,12 +57,12 @@
             flex: 1;
         }
 
-        h2 { 
-            text-align: center; 
-            margin: 0 0 5px 0; 
-            font-weight: 300; 
-            font-size: 1.5rem; 
-            color: #888; 
+        h2 {
+            text-align: center;
+            margin: 0 0 5px 0;
+            font-weight: 300;
+            font-size: 1.5rem;
+            color: #888;
         }
 
         /* Controls Layout */
@@ -70,11 +71,11 @@
             gap: 10px;
             margin-bottom: 5px;
         }
-        
+
         .sub-controls {
             display: flex;
-            justify-content: flex-start; 
-            gap: 20px; 
+            justify-content: flex-start;
+            gap: 20px;
             margin-bottom: 5px;
             padding: 0 2px;
         }
@@ -88,17 +89,17 @@
             cursor: pointer;
             user-select: none;
         }
-        
+
         .cb-label input {
-            width: auto; 
+            width: auto;
             margin: 0;
             cursor: pointer;
             accent-color: var(--accent-color);
-            transform: scale(1.1); 
+            transform: scale(1.1);
         }
 
         .control-group { flex: 1; }
-        
+
         select {
             width: 100%;
             background-color: var(--input-bg);
@@ -132,9 +133,10 @@
             background-color: var(--input-bg);
             border: 1px solid #444;
             color: white;
-            padding: 12px 10px 12px 50px; 
+            padding: 12px 10px 12px 50px;
             font-family: var(--font-mono);
-            font-size: 1.1rem;
+            /* UPDATED: Slightly smaller font to ensure long binary strings fit */
+            font-size: 1.0rem;
             border-radius: 6px;
             box-sizing: border-box;
             transition: background-color 0.1s, border-color 0.2s;
@@ -150,14 +152,14 @@
             background-color: var(--error-bg) !important;
             border-color: #ff4444 !important;
         }
-        
+
         .error-text {
             color: var(--ovf-color) !important;
             font-weight: bold;
         }
 
         .status-bar {
-            height: 30px; 
+            height: 30px;
             min-height: 30px;
             font-size: 1rem;
             text-align: right;
@@ -166,17 +168,17 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            display: flex; 
+            display: flex;
             align-items: center;
             justify-content: flex-end;
-            padding-bottom: 2px; 
+            padding-bottom: 2px;
         }
-        
+
         .status-bar sub {
             font-size: 0.6em;
-            vertical-align: baseline; 
+            vertical-align: baseline;
             position: relative;
-            bottom: -0.4em; 
+            bottom: -0.4em;
             margin-left: 2px;
             margin-right: 5px;
             color: #888;
@@ -187,7 +189,7 @@
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 8px;
-            height: 100%; 
+            height: 100%;
         }
 
         button {
@@ -201,7 +203,7 @@
             background-color: var(--key-bg);
             color: #fff;
             user-select: none;
-            touch-action: manipulation; 
+            touch-action: manipulation;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -227,7 +229,7 @@
             cursor: default;
             box-shadow: none;
             transform: none;
-            font-weight: normal; 
+            font-weight: normal;
         }
 
         @media (max-width: 400px) {
@@ -242,7 +244,7 @@
         @media (max-height: 600px) and (orientation: landscape) {
             body { align-items: stretch; }
             .calculator {
-                flex-direction: row; 
+                flex-direction: row;
                 max-width: 100%;
                 margin: 0;
                 min-height: 100vh;
@@ -252,7 +254,7 @@
             }
             .calc-screen { flex: 1; justify-content: center; gap: 8px; }
             .calc-pad { flex: 1.2; }
-            h2 { display: none; } 
+            h2 { display: none; }
             input[type="text"] { padding: 8px 8px 8px 50px; font-size: 1rem; }
             button { padding: 0; font-size: 1.1rem; }
         }
@@ -334,7 +336,7 @@
             <button class="btn-op" onclick="setOp('-')">-</button>
 
             <button class="btn-entry" data-val="0">0</button>
-            <button class="btn-entry" data-val="-">+/-</button> 
+            <button class="btn-entry" data-val="-">+/-</button>
             <button class="btn-action" onclick="calculate()">=</button>
             <button class="btn-op" onclick="setOp('+')">+</button>
         </div>
@@ -345,10 +347,10 @@
     /* --- State --- */
     let expressionQueue = [];
     let currentBigInt = 0n;
-    
-    let isTyping = false; 
+
+    let isTyping = false;
     let waitingForOperand = false;
-    let activeInputId = 'decInput'; 
+    let activeInputId = 'decInput';
     let errorState = null;
 
     /* --- DOM --- */
@@ -400,7 +402,7 @@
             let targetLen = 0;
             if (radix === 2) targetLen = bits;
             if (radix === 16) targetLen = bits / 4;
-            
+
             if (targetLen > 0) res = res.padStart(targetLen, '0');
         }
 
@@ -411,7 +413,7 @@
                      .join(' ')
                      .split('').reverse().join('');
         }
-        
+
         return res;
     }
 
@@ -439,11 +441,11 @@
     }
 
     function isInputOverflow(strVal, radix) {
-        if(!strVal || strVal === '-') return false; 
+        if(!strVal || strVal === '-') return false;
         try {
             const val = BigInt(parseInt(strVal, radix));
             const bits = BigInt(elBits.value);
-            
+
             if (radix === 16 || radix === 2) {
                 const max = (1n << bits) - 1n;
                 return (val < 0n || val > max);
@@ -475,12 +477,12 @@
             elHex.classList.remove('error-text'); elDec.classList.remove('error-text'); elBin.classList.remove('error-text');
 
             let maskedVal = currentBigInt & getMask();
-            currentBigInt = maskedVal; 
+            currentBigInt = maskedVal;
 
             let rawHex = maskedVal.toString(16).toUpperCase();
             let rawBin = maskedVal.toString(2);
-            let decStr = formatBigInt(maskedVal); 
-            
+            let decStr = formatBigInt(maskedVal);
+
             // Format passive fields (isForActiveInput = false)
             let displayHex = formatDisplayString(rawHex, 16, false);
             let displayBin = formatDisplayString(rawBin, 2, false);
@@ -492,7 +494,7 @@
             if (elHex.value === '') elHex.value = '0';
             if (elDec.value === '') elDec.value = '0';
             if (elBin.value === '') elBin.value = '0';
-            
+
             elHex.setAttribute('data-last', elHex.value);
             elDec.setAttribute('data-last', elDec.value);
             elBin.setAttribute('data-last', elBin.value);
@@ -503,7 +505,7 @@
     }
 
     function updateStatusText(resultObj) {
-        if (errorState && !resultObj) return; 
+        if (errorState && !resultObj) return;
 
         let html = "";
         expressionQueue.forEach(item => {
@@ -519,7 +521,7 @@
             let errStr = "";
             if(errorState) errStr = errorState === 'Div0' ? '&lt;Div0&gt;' : '&lt;Ovf&gt;';
             let resHtml = errorState ? errStr : formatForStatus(resultObj);
-            
+
             elStatus.innerHTML = html + "= " + resHtml;
             if(errorState) elStatus.classList.add('error-text');
             else elStatus.classList.remove('error-text');
@@ -552,18 +554,16 @@
             el.classList.add('active-field');
             updateKeypadState();
         });
-        
         el.addEventListener('keydown', () => prepareForNewInput());
-        
         el.addEventListener('input', (e) => {
             if(errorState) { prepareForNewInput(); }
 
             let rawVal = el.value.replace(validators[el.id], '').replace(/\s/g, '');
-            
+
             if (rawVal.length > 1 && rawVal.startsWith('0') && rawVal[1] !== 'x' && rawVal[1] !== 'b') {
-                rawVal = rawVal.substring(1); 
+                rawVal = rawVal.substring(1);
             }
-            if (rawVal === '') rawVal = ''; 
+            if (rawVal === '') rawVal = '';
 
             let parseStr = rawVal;
             if(radix === 16 && parseStr.startsWith('0x')) parseStr = parseStr.substring(2);
@@ -572,7 +572,7 @@
             if (parseStr !== '' && parseStr !== '-' && isInputOverflow(parseStr, radix)) {
                 el.value = el.getAttribute('data-last') || '';
                 flashError(el);
-                return; 
+                return;
             }
 
             if (!parseStr || parseStr === '-') {
@@ -584,13 +584,13 @@
             }
 
             let formattedDisplay = formatDisplayString(rawVal, radix, true);
-            
+
             const oldStart = el.selectionStart;
             const oldLen = el.value.length;
-            
+
             el.value = formattedDisplay;
-            el.setAttribute('data-last', el.value); 
-            
+            el.setAttribute('data-last', el.value);
+
             const newLen = el.value.length;
             if (oldStart !== null && document.activeElement === el) {
                 if(newLen > oldLen) {
@@ -600,8 +600,8 @@
                 }
             }
 
-            updateInputs(el.id); 
-            updateStatusText(null); 
+            updateInputs(el.id);
+            updateStatusText(null);
         });
     }
 
@@ -613,12 +613,12 @@
         keys.forEach(btn => {
             const char = btn.getAttribute('data-val');
             let allowed = validChars[activeInputId].includes(char);
-            
+
             if (char === '-') {
                 const decVal = elDec.value;
                 const isSignedMode = elSign.value === 'signed';
                 const valToCheck = errorState ? '' : decVal;
-                allowed = isSignedMode && (activeInputId === 'decInput') && 
+                allowed = isSignedMode && (activeInputId === 'decInput') &&
                           (valToCheck !== '0') && (valToCheck !== '') && (valToCheck !== '-');
             }
             if (allowed) btn.classList.remove('disabled');
@@ -628,10 +628,10 @@
 
     keys.forEach(btn => {
         btn.addEventListener('click', () => {
-            prepareForNewInput(); 
+            prepareForNewInput();
             const char = btn.getAttribute('data-val');
             const activeEl = document.getElementById(activeInputId);
-            
+
             let allowed = validChars[activeInputId].includes(char);
             if (char === '-') {
                 const decVal = elDec.value;
@@ -644,12 +644,12 @@
             }
 
             let currentVal = activeEl.value;
-            if(currentVal === '0') currentVal = ''; 
-            let candidate = (char === '-') ? 
-                (currentVal.startsWith('-') ? currentVal.substring(1) : '-' + currentVal) : 
+            if(currentVal === '0') currentVal = '';
+            let candidate = (char === '-') ?
+                (currentVal.startsWith('-') ? currentVal.substring(1) : '-' + currentVal) :
                 (currentVal + char);
 
-            if(candidate === '') candidate = '0'; 
+            if(candidate === '') candidate = '0';
 
             let cleanCandidate = candidate.replace(/\s/g, '');
 
@@ -676,10 +676,10 @@
     /* --- Operations & Math Engine --- */
     function setOp(op) {
         if(errorState) return;
-        
-        const entry = { 
-            val: currentBigInt, 
-            radix: radixMap[activeInputId] 
+
+        const entry = {
+            val: currentBigInt,
+            radix: radixMap[activeInputId]
         };
 
         if(waitingForOperand && expressionQueue.length > 0) {
@@ -688,7 +688,7 @@
             expressionQueue.push(entry);
             expressionQueue.push(op);
         }
-        
+
         waitingForOperand = true;
         updateStatusText(null);
         // FORCE UPDATE to apply "All Bits" padding to the number just finished
@@ -703,7 +703,7 @@
 
         const toReal = (val) => {
             if (elSign.value === 'unsigned') return val;
-            if ((val & signBit) !== 0n) return val - mod; 
+            if ((val & signBit) !== 0n) return val - mod;
             return val;
         };
 
@@ -711,7 +711,7 @@
         const realB = toReal(bObj.val);
 
         if (op === '/' && realB === 0n) throw "Div0";
-        
+
         switch (op) {
             case '+': result = realA + realB; break;
             case '-': result = realA - realB; break;
@@ -728,9 +728,9 @@
             if (result > max || result < min) throw "Ovf";
         }
 
-        return { 
-            val: result & (mod - 1n), 
-            radix: aObj.radix 
+        return {
+            val: result & (mod - 1n),
+            radix: aObj.radix
         };
     }
 
@@ -738,21 +738,21 @@
         if (errorState) { clearAll(); return; }
         if (expressionQueue.length === 0 && !waitingForOperand) return;
 
-        expressionQueue.push({ 
-            val: currentBigInt, 
-            radix: radixMap[activeInputId] 
+        expressionQueue.push({
+            val: currentBigInt,
+            radix: radixMap[activeInputId]
         });
 
         try {
             let tokens = [...expressionQueue];
-            
+
             for(let i=0; i<tokens.length; i++) {
                 if(tokens[i] === '*' || tokens[i] === '/') {
                     let left = tokens[i-1];
                     let right = tokens[i+1];
                     let res = calculatePair(left, tokens[i], right);
                     tokens.splice(i-1, 3, res);
-                    i--; 
+                    i--;
                 }
             }
 
@@ -762,32 +762,32 @@
                     let right = tokens[i+1];
                     let res = calculatePair(left, tokens[i], right);
                     tokens.splice(i-1, 3, res);
-                    i--; 
+                    i--;
                 }
             }
 
             let finalObj = tokens[0];
-            
+
             let resultForDisplay = {
                 val: finalObj.val,
                 radix: radixMap[activeInputId]
             };
-            
+
             updateStatusText(resultForDisplay);
-            
+
             currentBigInt = finalObj.val;
-            expressionQueue = []; 
-            waitingForOperand = true; 
-            
+            expressionQueue = [];
+            waitingForOperand = true;
+
             updateInputs('all');
-            
+
         } catch(e) {
             errorState = (e === "Div0") ? 'Div0' : 'Ovf';
-            expressionQueue.push({ 
-                val: currentBigInt, 
-                radix: radixMap[activeInputId] 
+            expressionQueue.push({
+                val: currentBigInt,
+                radix: radixMap[activeInputId]
             });
-            updateStatusText({}); 
+            updateStatusText({});
             updateInputs('all');
         }
     }
@@ -797,9 +797,9 @@
         expressionQueue = [];
         waitingForOperand = false;
         errorState = null;
-        elStatus.innerHTML = ''; 
+        elStatus.innerHTML = '';
         elStatus.classList.remove('error-text');
-        
+
         elHex.value = '0'; elDec.value = '0'; elBin.value = '0';
         elHex.setAttribute('data-last', '0');
         elDec.setAttribute('data-last', '0');
@@ -812,11 +812,11 @@
     // Init & Listeners
     elDec.focus();
     updateInputs('all');
-    
+
     // Listeners for global state changes
     elBits.addEventListener('change', () => { if(errorState) clearAll(); else updateInputs('all'); });
     elSign.addEventListener('change', () => { if(errorState) clearAll(); else updateInputs('all'); });
-    
+
     // Listeners for formatting options - Update all fields immediately
     elGrouping.addEventListener('change', () => { if(errorState) clearAll(); else updateInputs('all'); });
     elAllBits.addEventListener('change', () => { if(errorState) clearAll(); else updateInputs('all'); });
