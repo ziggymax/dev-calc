@@ -18,9 +18,9 @@
             --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
             --error-bg: #5a2222;
             --ovf-color: #ff5555;
-            --result-color: #4dff4d;
             
-            /* New style for bitwise operators */
+            /* Bright Green for Status Line */
+            --status-color: #4dff4d; 
             --bit-op-color: #00bfa5; 
         }
 
@@ -62,10 +62,18 @@
 
         h2 { 
             text-align: center; 
-            margin: 0 0 5px 0; 
+            margin: 0 0 2px 0; 
             font-weight: 300; 
             font-size: 1.5rem; 
-            color: #888; 
+            color: #ccc; 
+        }
+
+        /* New Hint Style */
+        .zoom-hint {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #777;
+            margin-bottom: 10px;
         }
 
         .controls {
@@ -159,12 +167,13 @@
             font-weight: bold;
         }
 
+        /* Updated Status Bar for readability */
         .status-bar {
-            height: 30px; 
-            min-height: 30px;
-            font-size: 1rem;
+            height: 35px; /* Increased height */
+            min-height: 35px;
+            font-size: 1.2rem; /* Larger font */
             text-align: right;
-            color: #aaa;
+            color: var(--status-color); /* Bright Green */
             font-family: var(--font-mono);
             white-space: nowrap;
             overflow: hidden;
@@ -173,20 +182,22 @@
             align-items: center;
             justify-content: flex-end;
             padding-bottom: 2px; 
+            text-shadow: 0 0 5px rgba(77, 255, 77, 0.2); /* Subtle glow */
         }
         
+        /* Updated Subscript Styling */
         .status-bar sub {
-            font-size: 0.6em;
+            font-size: 0.75em; /* Larger subscripts */
             vertical-align: baseline; 
             position: relative;
-            bottom: -0.4em; 
+            bottom: -0.3em; 
             margin-left: 2px;
-            margin-right: 5px;
-            color: #888;
-            font-weight: bold;
+            margin-right: 6px;
+            color: #aaffaa; /* Lighter green for subscripts */
+            font-weight: normal;
+            opacity: 0.9;
         }
 
-        /* Keypad Grid Updated to 5 columns */
         .keypad {
             display: grid;
             grid-template-columns: repeat(5, 1fr); 
@@ -196,7 +207,7 @@
 
         button {
             padding: 15px 0;
-            font-size: 1.1rem; /* Slightly smaller font to fit 5 cols */
+            font-size: 1.1rem; 
             border: none;
             border-radius: 6px;
             cursor: pointer;
@@ -220,15 +231,7 @@
 
         .btn-entry { font-weight: bold; color: white; }
         .btn-op { background-color: #282828; color: var(--accent-color); font-weight: bold; font-size: 1.3rem; }
-        
-        /* New class for Bitwise Operators */
-        .btn-bit { 
-            background-color: #282828; 
-            color: var(--bit-op-color); 
-            font-weight: bold; 
-            font-size: 1rem;
-        }
-
+        .btn-bit { background-color: #282828; color: var(--bit-op-color); font-weight: bold; font-size: 1rem; }
         .btn-action { background-color: var(--accent-color); color: white; }
         .btn-action:hover { background-color: #2a75cc; }
         .btn-clear { background-color: #a33; color: white; }
@@ -266,6 +269,7 @@
             .calc-screen { flex: 1; justify-content: center; gap: 8px; }
             .calc-pad { flex: 1.2; }
             h2 { display: none; } 
+            .zoom-hint { display: none; } /* Hide hint in compact landscape */
             input[type="text"] { padding: 8px 8px 8px 50px; font-size: 1rem; }
             button { padding: 0; font-size: 1rem; }
         }
@@ -276,6 +280,7 @@
 <div class="calculator">
     <div class="calc-screen">
         <h2>Programmer's Calculator</h2>
+        <div class="zoom-hint">Click Ctrl+ Ctrl- or Ctrl-MouseScroll to adjust size</div>
 
         <div class="controls">
             <div class="control-group">
@@ -321,42 +326,36 @@
 
     <div class="calc-pad">
         <div class="keypad">
-            <!-- Row 1 -->
             <button class="btn-entry" data-val="D">D</button>
             <button class="btn-entry" data-val="E">E</button>
             <button class="btn-entry" data-val="F">F</button>
             <button class="btn-clear" onclick="clearAll()">AC</button>
             <button class="btn-bit" onclick="setOp('AND')">AND</button>
 
-            <!-- Row 2 -->
             <button class="btn-entry" data-val="A">A</button>
             <button class="btn-entry" data-val="B">B</button>
             <button class="btn-entry" data-val="C">C</button>
             <button class="btn-op" onclick="backspace()">⌫</button>
             <button class="btn-bit" onclick="setOp('NAND')">NAND</button>
 
-            <!-- Row 3 -->
             <button class="btn-entry" data-val="7">7</button>
             <button class="btn-entry" data-val="8">8</button>
             <button class="btn-entry" data-val="9">9</button>
             <button class="btn-op" onclick="setOp('/')">÷</button>
             <button class="btn-bit" onclick="setOp('OR')">OR</button>
 
-            <!-- Row 4 -->
             <button class="btn-entry" data-val="4">4</button>
             <button class="btn-entry" data-val="5">5</button>
             <button class="btn-entry" data-val="6">6</button>
             <button class="btn-op" onclick="setOp('*')">×</button>
             <button class="btn-bit" onclick="setOp('NOR')">NOR</button>
 
-            <!-- Row 5 -->
             <button class="btn-entry" data-val="1">1</button>
             <button class="btn-entry" data-val="2">2</button>
             <button class="btn-entry" data-val="3">3</button>
             <button class="btn-op" onclick="setOp('-')">-</button>
             <button class="btn-bit" onclick="setOp('XOR')">XOR</button>
 
-            <!-- Row 6 -->
             <button class="btn-entry" data-val="0">0</button>
             <button class="btn-entry" data-val="-">+/-</button> 
             <button class="btn-action" onclick="calculate()">=</button>
@@ -612,9 +611,7 @@
             const oldLen = rawVal.length; 
             const newLen = el.value.length;
             if (oldStart !== null && document.activeElement === el) {
-                // Heuristic for cursor placement with spaces
                 if(newLen > oldLen) {
-                    // Added space likely, moving cursor along
                     el.setSelectionRange(oldStart + (newLen - oldLen), oldStart + (newLen - oldLen));
                 } else {
                     el.setSelectionRange(oldStart, oldStart);
@@ -717,18 +714,15 @@
 
     function doUnary(op) {
         if(errorState) return;
-        // If just finished an op, we treat current value as new operand
         if(waitingForOperand) {
             waitingForOperand = false; 
         }
 
         const mask = getMask();
         if(op === 'NOT') {
-            // Apply bitwise NOT and mask
             currentBigInt = (~currentBigInt) & mask;
         }
         
-        // Update UI immediately
         updateInputs('all');
         updateStatusText(null);
     }
@@ -739,7 +733,6 @@
         const mod = 1n << bits;
         const signBit = 1n << (bits - 1n);
 
-        // Helper to get math-ready values (negative for signed)
         const toReal = (val) => {
             if (elSign.value === 'unsigned') return val;
             if ((val & signBit) !== 0n) return val - mod; 
@@ -748,9 +741,6 @@
 
         const realA = toReal(aObj.val);
         const realB = toReal(bObj.val);
-        
-        // For Bitwise ops, we generally use the bit pattern (unsigned view)
-        // But for arithmetic (+ - * /), we use real values.
         const rawA = aObj.val;
         const rawB = bObj.val;
 
@@ -761,7 +751,6 @@
             case '-': result = realA - realB; break;
             case '*': result = realA * realB; break;
             case '/': result = realA / realB; break;
-            // Bitwise ops work on raw bits
             case 'AND': result = rawA & rawB; break;
             case 'OR':  result = rawA | rawB; break;
             case 'XOR': result = rawA ^ rawB; break;
@@ -769,7 +758,6 @@
             case 'NOR':  result = ~(rawA | rawB); break;
         }
 
-        // Apply Overflow Logic (Only for Arithmetic)
         if (['+', '-', '*', '/'].includes(op)) {
             if (elSign.value === 'unsigned') {
                 const max = mod - 1n;
@@ -799,12 +787,6 @@
         try {
             let tokens = [...expressionQueue];
             
-            // Precedence: 
-            // 1. * /
-            // 2. + -
-            // 3. Bitwise (AND, OR, XOR, NAND, NOR) - Left to Right
-            
-            // Pass 1: * /
             for(let i=0; i<tokens.length; i++) {
                 if(tokens[i] === '*' || tokens[i] === '/') {
                     let left = tokens[i-1];
@@ -815,7 +797,6 @@
                 }
             }
 
-            // Pass 2: + -
             for(let i=0; i<tokens.length; i++) {
                 if(tokens[i] === '+' || tokens[i] === '-') {
                     let left = tokens[i-1];
@@ -826,7 +807,6 @@
                 }
             }
             
-            // Pass 3: Bitwise
             for(let i=0; i<tokens.length; i++) {
                 if(['AND', 'OR', 'XOR', 'NAND', 'NOR'].includes(tokens[i])) {
                     let left = tokens[i-1];
