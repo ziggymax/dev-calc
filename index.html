@@ -18,6 +18,10 @@
             --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
             --error-bg: #5a2222;
             --ovf-color: #ff5555;
+            --result-color: #4dff4d;
+            
+            /* New style for bitwise operators */
+            --bit-op-color: #00bfa5; 
         }
 
         body {
@@ -64,7 +68,6 @@
             color: #888; 
         }
 
-        /* Controls Layout */
         .controls {
             display: flex;
             gap: 10px;
@@ -183,16 +186,17 @@
             font-weight: bold;
         }
 
+        /* Keypad Grid Updated to 5 columns */
         .keypad {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr); 
             gap: 8px;
             height: 100%; 
         }
 
         button {
             padding: 15px 0;
-            font-size: 1.2rem;
+            font-size: 1.1rem; /* Slightly smaller font to fit 5 cols */
             border: none;
             border-radius: 6px;
             cursor: pointer;
@@ -215,7 +219,16 @@
         }
 
         .btn-entry { font-weight: bold; color: white; }
-        .btn-op { background-color: #282828; color: var(--accent-color); font-weight: bold; font-size: 1.4rem; }
+        .btn-op { background-color: #282828; color: var(--accent-color); font-weight: bold; font-size: 1.3rem; }
+        
+        /* New class for Bitwise Operators */
+        .btn-bit { 
+            background-color: #282828; 
+            color: var(--bit-op-color); 
+            font-weight: bold; 
+            font-size: 1rem;
+        }
+
         .btn-action { background-color: var(--accent-color); color: white; }
         .btn-action:hover { background-color: #2a75cc; }
         .btn-clear { background-color: #a33; color: white; }
@@ -254,7 +267,7 @@
             .calc-pad { flex: 1.2; }
             h2 { display: none; } 
             input[type="text"] { padding: 8px 8px 8px 50px; font-size: 1rem; }
-            button { padding: 0; font-size: 1.1rem; }
+            button { padding: 0; font-size: 1rem; }
         }
     </style>
 </head>
@@ -308,35 +321,47 @@
 
     <div class="calc-pad">
         <div class="keypad">
+            <!-- Row 1 -->
             <button class="btn-entry" data-val="D">D</button>
             <button class="btn-entry" data-val="E">E</button>
             <button class="btn-entry" data-val="F">F</button>
             <button class="btn-clear" onclick="clearAll()">AC</button>
+            <button class="btn-bit" onclick="setOp('AND')">AND</button>
 
+            <!-- Row 2 -->
             <button class="btn-entry" data-val="A">A</button>
             <button class="btn-entry" data-val="B">B</button>
             <button class="btn-entry" data-val="C">C</button>
             <button class="btn-op" onclick="backspace()">⌫</button>
+            <button class="btn-bit" onclick="setOp('NAND')">NAND</button>
 
+            <!-- Row 3 -->
             <button class="btn-entry" data-val="7">7</button>
             <button class="btn-entry" data-val="8">8</button>
             <button class="btn-entry" data-val="9">9</button>
             <button class="btn-op" onclick="setOp('/')">÷</button>
+            <button class="btn-bit" onclick="setOp('OR')">OR</button>
 
+            <!-- Row 4 -->
             <button class="btn-entry" data-val="4">4</button>
             <button class="btn-entry" data-val="5">5</button>
             <button class="btn-entry" data-val="6">6</button>
             <button class="btn-op" onclick="setOp('*')">×</button>
+            <button class="btn-bit" onclick="setOp('NOR')">NOR</button>
 
+            <!-- Row 5 -->
             <button class="btn-entry" data-val="1">1</button>
             <button class="btn-entry" data-val="2">2</button>
             <button class="btn-entry" data-val="3">3</button>
             <button class="btn-op" onclick="setOp('-')">-</button>
+            <button class="btn-bit" onclick="setOp('XOR')">XOR</button>
 
+            <!-- Row 6 -->
             <button class="btn-entry" data-val="0">0</button>
             <button class="btn-entry" data-val="-">+/-</button> 
             <button class="btn-action" onclick="calculate()">=</button>
             <button class="btn-op" onclick="setOp('+')">+</button>
+            <button class="btn-bit" onclick="doUnary('NOT')">NOT</button>
         </div>
     </div>
 </div>
@@ -370,7 +395,6 @@
 
     const radixMap = { 'hexInput': 16, 'decInput': 10, 'binInput': 2 };
     const validChars = { 'hexInput': "0123456789ABCDEFabcdef", 'decInput': "0123456789-", 'binInput': "01" };
-    // Validators remove spaces as well, so we can clean grouped input
     const validators = {
         'hexInput': /[^0-9a-fA-F]/g,
         'decInput': /[^0-9\-]/g,
@@ -389,12 +413,10 @@
         }
     }
 
-    // --- Formatting Logic ---
     function formatDisplayString(str, radix, isForActiveInput, forceNoPadding = false) {
         if (!str) return str;
         let res = str;
 
-        // 1. All Bits Padding (Only if enabled AND not active input AND not forced off)
         if (elAllBits.checked && !isForActiveInput && !forceNoPadding) {
             const bits = parseInt(elBits.value);
             let targetLen = 0;
@@ -404,14 +426,12 @@
             if (targetLen > 0) res = res.padStart(targetLen, '0');
         }
 
-        // 2. Grouping (Hex and Bin)
         if (elGrouping.checked && (radix === 2 || radix === 16)) {
             res = res.split('').reverse().join('')
                      .match(/.{1,4}/g)
                      .join(' ')
                      .split('').reverse().join('');
         }
-        
         return res;
     }
 
@@ -481,7 +501,6 @@
             let rawBin = maskedVal.toString(2);
             let decStr = formatBigInt(maskedVal); 
             
-            // Format passive fields (isForActiveInput = false)
             let displayHex = formatDisplayString(rawHex, 16, false);
             let displayBin = formatDisplayString(rawBin, 2, false);
 
@@ -510,7 +529,9 @@
             if (typeof item === 'object') {
                 html += formatForStatus(item) + " ";
             } else {
-                const s = item === '*' ? '×' : item === '/' ? '÷' : item;
+                let s = item;
+                if(item === '*') s = '×';
+                else if(item === '/') s = '÷';
                 html += s + " ";
             }
         });
@@ -584,14 +605,16 @@
             let formattedDisplay = formatDisplayString(rawVal, radix, true);
             
             const oldStart = el.selectionStart;
-            const oldLen = el.value.length;
             
             el.value = formattedDisplay;
             el.setAttribute('data-last', el.value); 
             
+            const oldLen = rawVal.length; 
             const newLen = el.value.length;
             if (oldStart !== null && document.activeElement === el) {
+                // Heuristic for cursor placement with spaces
                 if(newLen > oldLen) {
+                    // Added space likely, moving cursor along
                     el.setSelectionRange(oldStart + (newLen - oldLen), oldStart + (newLen - oldLen));
                 } else {
                     el.setSelectionRange(oldStart, oldStart);
@@ -692,12 +715,31 @@
         updateInputs('all');
     }
 
+    function doUnary(op) {
+        if(errorState) return;
+        // If just finished an op, we treat current value as new operand
+        if(waitingForOperand) {
+            waitingForOperand = false; 
+        }
+
+        const mask = getMask();
+        if(op === 'NOT') {
+            // Apply bitwise NOT and mask
+            currentBigInt = (~currentBigInt) & mask;
+        }
+        
+        // Update UI immediately
+        updateInputs('all');
+        updateStatusText(null);
+    }
+
     function calculatePair(aObj, op, bObj) {
         let result = 0n;
         const bits = BigInt(elBits.value);
         const mod = 1n << bits;
         const signBit = 1n << (bits - 1n);
 
+        // Helper to get math-ready values (negative for signed)
         const toReal = (val) => {
             if (elSign.value === 'unsigned') return val;
             if ((val & signBit) !== 0n) return val - mod; 
@@ -706,6 +748,11 @@
 
         const realA = toReal(aObj.val);
         const realB = toReal(bObj.val);
+        
+        // For Bitwise ops, we generally use the bit pattern (unsigned view)
+        // But for arithmetic (+ - * /), we use real values.
+        const rawA = aObj.val;
+        const rawB = bObj.val;
 
         if (op === '/' && realB === 0n) throw "Div0";
         
@@ -714,15 +761,24 @@
             case '-': result = realA - realB; break;
             case '*': result = realA * realB; break;
             case '/': result = realA / realB; break;
+            // Bitwise ops work on raw bits
+            case 'AND': result = rawA & rawB; break;
+            case 'OR':  result = rawA | rawB; break;
+            case 'XOR': result = rawA ^ rawB; break;
+            case 'NAND': result = ~(rawA & rawB); break;
+            case 'NOR':  result = ~(rawA | rawB); break;
         }
 
-        if (elSign.value === 'unsigned') {
-            const max = mod - 1n;
-            if (result < 0n || result > max) throw "Ovf";
-        } else {
-            const max = (1n << (bits - 1n)) - 1n;
-            const min = -(1n << (bits - 1n));
-            if (result > max || result < min) throw "Ovf";
+        // Apply Overflow Logic (Only for Arithmetic)
+        if (['+', '-', '*', '/'].includes(op)) {
+            if (elSign.value === 'unsigned') {
+                const max = mod - 1n;
+                if (result < 0n || result > max) throw "Ovf";
+            } else {
+                const max = (1n << (bits - 1n)) - 1n;
+                const min = -(1n << (bits - 1n));
+                if (result > max || result < min) throw "Ovf";
+            }
         }
 
         return { 
@@ -743,6 +799,12 @@
         try {
             let tokens = [...expressionQueue];
             
+            // Precedence: 
+            // 1. * /
+            // 2. + -
+            // 3. Bitwise (AND, OR, XOR, NAND, NOR) - Left to Right
+            
+            // Pass 1: * /
             for(let i=0; i<tokens.length; i++) {
                 if(tokens[i] === '*' || tokens[i] === '/') {
                     let left = tokens[i-1];
@@ -753,8 +815,20 @@
                 }
             }
 
+            // Pass 2: + -
             for(let i=0; i<tokens.length; i++) {
                 if(tokens[i] === '+' || tokens[i] === '-') {
+                    let left = tokens[i-1];
+                    let right = tokens[i+1];
+                    let res = calculatePair(left, tokens[i], right);
+                    tokens.splice(i-1, 3, res);
+                    i--; 
+                }
+            }
+            
+            // Pass 3: Bitwise
+            for(let i=0; i<tokens.length; i++) {
+                if(['AND', 'OR', 'XOR', 'NAND', 'NOR'].includes(tokens[i])) {
                     let left = tokens[i-1];
                     let right = tokens[i+1];
                     let res = calculatePair(left, tokens[i], right);
@@ -810,11 +884,9 @@
     elDec.focus();
     updateInputs('all');
     
-    // Listeners for global state changes
     elBits.addEventListener('change', () => { if(errorState) clearAll(); else updateInputs('all'); });
     elSign.addEventListener('change', () => { if(errorState) clearAll(); else updateInputs('all'); });
     
-    // Listeners for formatting options
     elGrouping.addEventListener('change', () => { if(errorState) clearAll(); else updateInputs('all'); });
     elAllBits.addEventListener('change', () => { if(errorState) clearAll(); else updateInputs('all'); });
 
