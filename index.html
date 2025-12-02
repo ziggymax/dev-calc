@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Programmer's Calculator</title>
+    <style>
+        :root {
+            --bg-color: #e8e8e8; 
+            --panel-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent-color: #3794ff;
+            --input-bg: #2c2c2c;
+            --key-bg: #333;
+            --key-bg-hover: #444;
+            --key-disabled: #262626;
+            --text-disabled: #444;
+            --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+            --error-bg: #5a2222;
+            --ovf-color: #ff5555;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0; 
+        }
+
+        .calculator {
+            background-color: var(--panel-color);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7); 
+            width: 100%;
+            max-width: 850px; 
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px;
+        }
+
+        .calc-screen {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .calc-pad {
+            flex: 1;
+        }
+
+        h2 { 
+            text-align: center; 
+            margin: 0 0 5px 0; 
+            font-weight: 300; 
+            font-size: 1.5rem; 
+            color: #888; 
+        }
+
+        /* Controls Layout */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+        
+        .sub-controls {
+            display: flex;
+            justify-content: flex-start; 
+            gap: 20px; 
+            margin-bottom: 5px;
+            padding: 0 2px;
+        }
+
+        .cb-label {
+            font-size: 0.9rem;
+            color: #aaa;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .cb-label input {
+            width: auto; 
+            margin: 0;
+            cursor: pointer;
+            accent-color: var(--accent-color);
+            transform: scale(1.1); 
+        }
+
+        .control-group { flex: 1; }
+        
+        select {
+            width: 100%;
+            background-color: var(--input-bg);
+            color: white;
+            border: 1px solid #444;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .display-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .label-tag {
+            position: absolute;
+            left: 10px;
+            color: var(--accent-color);
+            font-family: var(--font-mono);
+            font-weight: bold;
+            font-size: 0.8rem;
+            pointer-events: none;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            background-color: var(--input-bg);
+            border: 1px solid #444;
+            color: white;
+            padding: 12px 10px 12px 50px; 
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            border-radius: 6px;
+            box-sizing: border-box;
+            transition: background-color 0.1s, border-color 0.2s;
+        }
+
+        input:focus, input.active-field {
+            border-color: var(--accent-color);
+            background-color: #383838;
+            outline: none;
+        }
+
+        .input-error {
+            background-color: var(--error-bg) !important;
+            border-color: #ff4444 !important;
+        }
+        
+        .error-text {
+            color: var(--ovf-color) !important;
+            font-weight: bold;
+        }
+
+        .status-bar {
+            height: 30px; 
+            min-height: 30px;
+            font-size: 1rem;
+            text-align: right;
+            color: #aaa;
+            font-family: var(--font-mono);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex; 
+            align-items: center;
+            justify-content: flex-end;
+            padding-bottom: 2px; 
+        }
+        
+        .status-bar sub {
+            font-size: 0.6em;
+            vertical-align: baseline; 
+            position: relative;
+            bottom: -0.4em; 
+            margin-left: 2px;
+            margin-right: 5px;
+            color: #888;
+            font-weight: bold;
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            height: 100%; 
+        }
+
+        button {
+            padding: 15px 0;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.1s;
+            font-family: var(--font-mono);
+            background-color: var(--key-bg);
+            color: #fff;
+            user-select: none;
+            touch-action: manipulation; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:active { transform: translateY(2px); }
+
+        @media (hover: hover) {
+            button:hover { background-color: var(--key-bg-hover); transform: translateY(-1px); }
+            button:active { transform: translateY(1px); }
+        }
+
+        .btn-entry { font-weight: bold; color: white; }
+        .btn-op { background-color: #282828; color: var(--accent-color); font-weight: bold; font-size: 1.4rem; }
+        .btn-action { background-color: var(--accent-color); color: white; }
+        .btn-action:hover { background-color: #2a75cc; }
+        .btn-clear { background-color: #a33; color: white; }
+        .btn-clear:hover { background-color: #922; }
+
+        button.disabled {
+            background-color: var(--key-disabled);
+            color: var(--text-disabled);
+            cursor: default;
+            box-shadow: none;
+            transform: none;
+            font-weight: normal; 
+        }
+
+        @media (max-width: 400px) {
+            .calculator {
+                margin: 0;
+                border-radius: 0;
+                min-height: 100vh;
+                padding: 15px;
+            }
+        }
+
+        @media (max-height: 600px) and (orientation: landscape) {
+            body { align-items: stretch; }
+            .calculator {
+                flex-direction: row; 
+                max-width: 100%;
+                margin: 0;
+                min-height: 100vh;
+                border-radius: 0;
+                padding: 15px;
+                gap: 20px;
+            }
+            .calc-screen { flex: 1; justify-content: center; gap: 8px; }
+            .calc-pad { flex: 1.2; }
+            h2 { display: none; } 
+            input[type="text"] { padding: 8px 8px 8px 50px; font-size: 1rem; }
+            button { padding: 0; font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="calculator">
+    <div class="calc-screen">
+        <h2>Programmer's Calculator</h2>
+
+        <div class="controls">
+            <div class="control-group">
+                <select id="bitSelect">
+                    <option value="64">64-bit</option>
+                    <option value="32" selected>32-bit</option>
+                    <option value="16">16-bit</option>
+                    <option value="8">8-bit</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <select id="signSelect">
+                    <option value="signed">Signed</option>
+                    <option value="unsigned">Unsigned</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="sub-controls">
+            <label class="cb-label">
+                <input type="checkbox" id="cbGrouping"> Grouping
+            </label>
+            <label class="cb-label">
+                <input type="checkbox" id="cbAllBits"> All bits
+            </label>
+        </div>
+
+        <div class="display-group">
+            <span class="label-tag">HEX</span>
+            <input type="text" id="hexInput" placeholder="0" spellcheck="false" autocomplete="off" data-last="0" maxlength="30">
+        </div>
+        <div class="display-group">
+            <span class="label-tag">DEC</span>
+            <input type="text" id="decInput" placeholder="0" spellcheck="false" autocomplete="off" data-last="0" maxlength="30">
+        </div>
+        <div class="display-group">
+            <span class="label-tag">BIN</span>
+            <input type="text" id="binInput" placeholder="0" spellcheck="false" autocomplete="off" data-last="0" maxlength="100">
+        </div>
+
+        <div class="status-bar" id="opStatus"></div>
+    </div>
+
+    <div class="calc-pad">
+        <div class="keypad">
+            <button class="btn-entry" data-val="D">D</button>
+            <button class="btn-entry" data-val="E">E</button>
+            <button class="btn-entry" data-val="F">F</button>
+            <button class="btn-clear" onclick="clearAll()">AC</button>
+
+            <button class="btn-entry" data-val="A">A</button>
+            <button class="btn-entry" data-val="B">B</button>
+            <button class="btn-entry" data-val="C">C</button>
+            <button class="btn-op" onclick="backspace()">⌫</button>
+
+            <button class="btn-entry" data-val="7">7</button>
+            <button class="btn-entry" data-val="8">8</button>
+            <button class="btn-entry" data-val="9">9</button>
+            <button class="btn-op" onclick="setOp('/')">÷</button>
+
+            <button class="btn-entry" data-val="4">4</button>
+            <button class="btn-entry" data-val="5">5</button>
+            <button class="btn-entry" data-val="6">6</button>
+            <button class="btn-op" onclick="setOp('*')">×</button>
+
+            <button class="btn-entry" data-val="1">1</button>
+            <button class="btn-entry" data-val="2">2</button>
+            <button class="btn-entry" data-val="3">3</button>
+            <button class="btn-op" onclick="setOp('-')">-</button>
+
+            <button class="btn-entry" data-val="0">0</button>
+            <button class="btn-entry" data-val="-">+/-</button> 
+            <button class="btn-action" onclick="calculate()">=</button>
+            <button class="btn-op" onclick="setOp('+')">+</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* --- State --- */
+    let expressionQueue = [];
+    let currentBigInt = 0n;
+    
+    let isTyping = false; 
+    let waitingForOperand = false;
+    let activeInputId = 'decInput'; 
+    let errorState = null;
+
+    /* --- DOM --- */
+    const elBits = document.getElementById('bitSelect');
+    const elSign = document.getElementById('signSelect');
+    const elGrouping = document.getElementById('cbGrouping');
+    const elAllBits = document.getElementById('cbAllBits');
+
+    const elHex = document.getElementById('hexInput');
+    const elDec = document.getElementById('decInput');
+    const elBin = document.getElementById('binInput');
+    const elStatus = document.getElementById('opStatus');
+    const keys = document.querySelectorAll('.keypad button[data-val]');
+
+    /* --- Helpers --- */
+    const getMod = () => 1n << BigInt(elBits.value);
+    const getMask = () => getMod() - 1n;
+    const getSignBit = () => 1n << (BigInt(elBits.value) - 1n);
+
+    const radixMap = { 'hexInput': 16, 'decInput': 10, 'binInput': 2 };
+    const validChars = { 'hexInput': "0123456789ABCDEFabcdef", 'decInput': "0123456789-", 'binInput': "01" };
+    // Validators remove spaces as well, so we can clean grouped input
+    const validators = {
+        'hexInput': /[^0-9a-fA-F]/g,
+        'decInput': /[^0-9\-]/g,
+        'binInput': /[^0-1]/g
+    };
+
+    function formatBigInt(val) {
+        if(elSign.value === 'unsigned') {
+            return (val & getMask()).toString(10);
+        } else {
+            let masked = val & getMask();
+            if ((masked & getSignBit()) !== 0n) {
+                return (masked - getMod()).toString(10);
+            }
+            return masked.toString(10);
+        }
+    }
+
+    // --- Formatting Logic ---
+    function formatDisplayString(str, radix, isForActiveInput, forceNoPadding = false) {
+        if (!str) return str;
+        let res = str;
+
+        // 1. All Bits Padding (Only if enabled AND not active input AND not forced off)
+        if (elAllBits.checked && !isForActiveInput && !forceNoPadding) {
+            const bits = parseInt(elBits.value);
+            let targetLen = 0;
+            if (radix === 2) targetLen = bits;
+            if (radix === 16) targetLen = bits / 4;
+            
+            if (targetLen > 0) res = res.padStart(targetLen, '0');
+        }
+
+        // 2. Grouping (Hex and Bin)
+        if (elGrouping.checked && (radix === 2 || radix === 16)) {
+            res = res.split('').reverse().join('')
+                     .match(/.{1,4}/g)
+                     .join(' ')
+                     .split('').reverse().join('');
+        }
+        
+        return res;
+    }
+
+    function formatForStatus(valObj) {
+        if(!valObj || typeof valObj !== 'object') return "";
+        const val = valObj.val;
+        const r = valObj.radix;
+        const mask = getMask();
+
+        if (r === 16) {
+            let rawHex = (val & mask).toString(16).toUpperCase();
+            return formatDisplayString(rawHex, 16, false, true) + "<sub>H</sub>";
+        } else if (r === 2) {
+            let rawBin = (val & mask).toString(2);
+            return formatDisplayString(rawBin, 2, false, true) + "<sub>B</sub>";
+        } else {
+            return formatBigInt(val) + "<sub>D</sub>";
+        }
+    }
+
+    /* --- Input Guards --- */
+    function flashError(el) {
+        el.classList.add('input-error');
+        setTimeout(() => { el.classList.remove('input-error'); }, 150);
+    }
+
+    function isInputOverflow(strVal, radix) {
+        if(!strVal || strVal === '-') return false; 
+        try {
+            const val = BigInt(parseInt(strVal, radix));
+            const bits = BigInt(elBits.value);
+            
+            if (radix === 16 || radix === 2) {
+                const max = (1n << bits) - 1n;
+                return (val < 0n || val > max);
+            }
+            if (radix === 10) {
+                if(elSign.value === 'signed') {
+                    const max = (1n << (bits - 1n)) - 1n;
+                    const min = -(1n << (bits - 1n));
+                    return (val > max || val < min);
+                } else {
+                    const max = (1n << bits) - 1n;
+                    return (val < 0n || val > max);
+                }
+            }
+        } catch(e) { return true; }
+        return false;
+    }
+
+    /* --- Update Logic --- */
+    function updateInputs(source) {
+        if(isTyping) return;
+        isTyping = true;
+
+        if (errorState) {
+            let errStr = errorState === 'Div0' ? '<Div0>' : '<Ovf>';
+            elHex.value = errStr; elDec.value = errStr; elBin.value = errStr;
+            elHex.classList.add('error-text'); elDec.classList.add('error-text'); elBin.classList.add('error-text');
+        } else {
+            elHex.classList.remove('error-text'); elDec.classList.remove('error-text'); elBin.classList.remove('error-text');
+
+            let maskedVal = currentBigInt & getMask();
+            currentBigInt = maskedVal; 
+
+            let rawHex = maskedVal.toString(16).toUpperCase();
+            let rawBin = maskedVal.toString(2);
+            let decStr = formatBigInt(maskedVal); 
+            
+            // Format passive fields (isForActiveInput = false)
+            let displayHex = formatDisplayString(rawHex, 16, false);
+            let displayBin = formatDisplayString(rawBin, 2, false);
+
+            if (source !== 'hexInput') elHex.value = displayHex;
+            if (source !== 'decInput') elDec.value = decStr;
+            if (source !== 'binInput') elBin.value = displayBin;
+
+            if (elHex.value === '') elHex.value = '0';
+            if (elDec.value === '') elDec.value = '0';
+            if (elBin.value === '') elBin.value = '0';
+            
+            elHex.setAttribute('data-last', elHex.value);
+            elDec.setAttribute('data-last', elDec.value);
+            elBin.setAttribute('data-last', elBin.value);
+        }
+
+        updateKeypadState();
+        isTyping = false;
+    }
+
+    function updateStatusText(resultObj) {
+        if (errorState && !resultObj) return; 
+
+        let html = "";
+        expressionQueue.forEach(item => {
+            if (typeof item === 'object') {
+                html += formatForStatus(item) + " ";
+            } else {
+                const s = item === '*' ? '×' : item === '/' ? '÷' : item;
+                html += s + " ";
+            }
+        });
+
+        if (resultObj) {
+            let errStr = "";
+            if(errorState) errStr = errorState === 'Div0' ? '&lt;Div0&gt;' : '&lt;Ovf&gt;';
+            let resHtml = errorState ? errStr : formatForStatus(resultObj);
+            
+            elStatus.innerHTML = html + "= " + resHtml;
+            if(errorState) elStatus.classList.add('error-text');
+            else elStatus.classList.remove('error-text');
+        } else {
+            if(!waitingForOperand && !errorState) {
+                html += formatForStatus({ val: currentBigInt, radix: radixMap[activeInputId] });
+            }
+            elStatus.innerHTML = html;
+            elStatus.classList.remove('error-text');
+        }
+    }
+
+    function prepareForNewInput() {
+        if (errorState) { clearAll(); return; }
+        if (waitingForOperand) {
+            elHex.value = ''; elDec.value = ''; elBin.value = '';
+            elHex.setAttribute('data-last', '');
+            elDec.setAttribute('data-last', '');
+            elBin.setAttribute('data-last', '');
+            currentBigInt = 0n;
+            waitingForOperand = false;
+        }
+    }
+
+    /* --- Input Handlers --- */
+    function setupInput(el, radix) {
+        el.addEventListener('focus', () => {
+            activeInputId = el.id;
+            [elHex, elDec, elBin].forEach(i => i.classList.remove('active-field'));
+            el.classList.add('active-field');
+            updateKeypadState();
+        });
+        
+        el.addEventListener('keydown', () => prepareForNewInput());
+        
+        el.addEventListener('input', (e) => {
+            if(errorState) { prepareForNewInput(); }
+
+            let rawVal = el.value.replace(validators[el.id], '').replace(/\s/g, '');
+            
+            if (rawVal.length > 1 && rawVal.startsWith('0') && rawVal[1] !== 'x' && rawVal[1] !== 'b') {
+                rawVal = rawVal.substring(1); 
+            }
+            if (rawVal === '') rawVal = ''; 
+
+            let parseStr = rawVal;
+            if(radix === 16 && parseStr.startsWith('0x')) parseStr = parseStr.substring(2);
+            if(radix === 2 && parseStr.startsWith('0b')) parseStr = parseStr.substring(2);
+
+            if (parseStr !== '' && parseStr !== '-' && isInputOverflow(parseStr, radix)) {
+                el.value = el.getAttribute('data-last') || '';
+                flashError(el);
+                return; 
+            }
+
+            if (!parseStr || parseStr === '-') {
+                if (!parseStr) currentBigInt = 0n;
+            } else {
+                try {
+                    currentBigInt = BigInt(parseInt(parseStr, radix));
+                } catch(err) {}
+            }
+
+            let formattedDisplay = formatDisplayString(rawVal, radix, true);
+            
+            const oldStart = el.selectionStart;
+            const oldLen = el.value.length;
+            
+            el.value = formattedDisplay;
+            el.setAttribute('data-last', el.value); 
+            
+            const newLen = el.value.length;
+            if (oldStart !== null && document.activeElement === el) {
+                if(newLen > oldLen) {
+                    el.setSelectionRange(oldStart + (newLen - oldLen), oldStart + (newLen - oldLen));
+                } else {
+                    el.setSelectionRange(oldStart, oldStart);
+                }
+            }
+
+            updateInputs(el.id); 
+            updateStatusText(null); 
+        });
+    }
+
+    setupInput(elHex, 16);
+    setupInput(elDec, 10);
+    setupInput(elBin, 2);
+
+    function updateKeypadState() {
+        keys.forEach(btn => {
+            const char = btn.getAttribute('data-val');
+            let allowed = validChars[activeInputId].includes(char);
+            
+            if (char === '-') {
+                const decVal = elDec.value;
+                const isSignedMode = elSign.value === 'signed';
+                const valToCheck = errorState ? '' : decVal;
+                allowed = isSignedMode && (activeInputId === 'decInput') && 
+                          (valToCheck !== '0') && (valToCheck !== '') && (valToCheck !== '-');
+            }
+            if (allowed) btn.classList.remove('disabled');
+            else btn.classList.add('disabled');
+        });
+    }
+
+    keys.forEach(btn => {
+        btn.addEventListener('click', () => {
+            prepareForNewInput(); 
+            const char = btn.getAttribute('data-val');
+            const activeEl = document.getElementById(activeInputId);
+            
+            let allowed = validChars[activeInputId].includes(char);
+            if (char === '-') {
+                const decVal = elDec.value;
+                const isSignedMode = elSign.value === 'signed';
+                allowed = isSignedMode && (activeInputId === 'decInput') && (decVal !== '0') && (decVal !== '');
+            }
+            if(!allowed) return;
+            if(activeEl.value.length >= activeEl.maxLength && char !== '-') {
+                 flashError(activeEl); return;
+            }
+
+            let currentVal = activeEl.value;
+            if(currentVal === '0') currentVal = ''; 
+            let candidate = (char === '-') ? 
+                (currentVal.startsWith('-') ? currentVal.substring(1) : '-' + currentVal) : 
+                (currentVal + char);
+
+            if(candidate === '') candidate = '0'; 
+
+            let cleanCandidate = candidate.replace(/\s/g, '');
+
+            let radix = activeInputId === 'hexInput' ? 16 : activeInputId === 'binInput' ? 2 : 10;
+            if (isInputOverflow(cleanCandidate, radix)) { flashError(activeEl); return; }
+
+            activeEl.value = candidate;
+            activeEl.dispatchEvent(new Event('input'));
+        });
+    });
+
+    function backspace() {
+        if(errorState) { clearAll(); return; }
+        prepareForNewInput();
+        const activeEl = document.getElementById(activeInputId);
+        let val = activeEl.value;
+        if(val.length > 0) {
+            activeEl.value = val.slice(0, -1);
+            if(activeEl.value === '') activeEl.value = '0';
+            activeEl.dispatchEvent(new Event('input'));
+        }
+    }
+
+    /* --- Operations & Math Engine --- */
+    function setOp(op) {
+        if(errorState) return;
+        
+        const entry = { 
+            val: currentBigInt, 
+            radix: radixMap[activeInputId] 
+        };
+
+        if(waitingForOperand && expressionQueue.length > 0) {
+            expressionQueue[expressionQueue.length - 1] = op;
+        } else {
+            expressionQueue.push(entry);
+            expressionQueue.push(op);
+        }
+        
+        waitingForOperand = true;
+        updateStatusText(null);
+        // FORCE UPDATE to apply "All Bits" padding to the number just finished
+        updateInputs('all');
+    }
+
+    function calculatePair(aObj, op, bObj) {
+        let result = 0n;
+        const bits = BigInt(elBits.value);
+        const mod = 1n << bits;
+        const signBit = 1n << (bits - 1n);
+
+        const toReal = (val) => {
+            if (elSign.value === 'unsigned') return val;
+            if ((val & signBit) !== 0n) return val - mod; 
+            return val;
+        };
+
+        const realA = toReal(aObj.val);
+        const realB = toReal(bObj.val);
+
+        if (op === '/' && realB === 0n) throw "Div0";
+        
+        switch (op) {
+            case '+': result = realA + realB; break;
+            case '-': result = realA - realB; break;
+            case '*': result = realA * realB; break;
+            case '/': result = realA / realB; break;
+        }
+
+        if (elSign.value === 'unsigned') {
+            const max = mod - 1n;
+            if (result < 0n || result > max) throw "Ovf";
+        } else {
+            const max = (1n << (bits - 1n)) - 1n;
+            const min = -(1n << (bits - 1n));
+            if (result > max || result < min) throw "Ovf";
+        }
+
+        return { 
+            val: result & (mod - 1n), 
+            radix: aObj.radix 
+        };
+    }
+
+    function calculate() {
+        if (errorState) { clearAll(); return; }
+        if (expressionQueue.length === 0 && !waitingForOperand) return;
+
+        expressionQueue.push({ 
+            val: currentBigInt, 
+            radix: radixMap[activeInputId] 
+        });
+
+        try {
+            let tokens = [...expressionQueue];
+            
+            for(let i=0; i<tokens.length; i++) {
+                if(tokens[i] === '*' || tokens[i] === '/') {
+                    let left = tokens[i-1];
+                    let right = tokens[i+1];
+                    let res = calculatePair(left, tokens[i], right);
+                    tokens.splice(i-1, 3, res);
+                    i--; 
+                }
+            }
+
+            for(let i=0; i<tokens.length; i++) {
+                if(tokens[i] === '+' || tokens[i] === '-') {
+                    let left = tokens[i-1];
+                    let right = tokens[i+1];
+                    let res = calculatePair(left, tokens[i], right);
+                    tokens.splice(i-1, 3, res);
+                    i--; 
+                }
+            }
+
+            let finalObj = tokens[0];
+            
+            let resultForDisplay = {
+                val: finalObj.val,
+                radix: radixMap[activeInputId]
+            };
+            
+            updateStatusText(resultForDisplay);
+            
+            currentBigInt = finalObj.val;
+            expressionQueue = []; 
+            waitingForOperand = true; 
+            
+            updateInputs('all');
+            
+        } catch(e) {
+            errorState = (e === "Div0") ? 'Div0' : 'Ovf';
+            expressionQueue.push({ 
+                val: currentBigInt, 
+                radix: radixMap[activeInputId] 
+            });
+            updateStatusText({}); 
+            updateInputs('all');
+        }
+    }
+
+    function clearAll() {
+        currentBigInt = 0n;
+        expressionQueue = [];
+        waitingForOperand = false;
+        errorState = null;
+        elStatus.innerHTML = ''; 
+        elStatus.classList.remove('error-text');
+        
+        elHex.value = '0'; elDec.value = '0'; elBin.value = '0';
+        elHex.setAttribute('data-last', '0');
+        elDec.setAttribute('data-last', '0');
+        elBin.setAttribute('data-last', '0');
+
+        document.getElementById(activeInputId).focus();
+        updateInputs('all');
+    }
+
+    // Init & Listeners
+    elDec.focus();
+    updateInputs('all');
+    
+    // Listeners for global state changes
+    elBits.addEventListener('change', () => { if(errorState) clearAll(); else updateInputs('all'); });
+    elSign.addEventListener('change', () => { if(errorState) clearAll(); else updateInputs('all'); });
+    
+    // Listeners for formatting options - Update all fields immediately
+    elGrouping.addEventListener('change', () => { if(errorState) clearAll(); else updateInputs('all'); });
+    elAllBits.addEventListener('change', () => { if(errorState) clearAll(); else updateInputs('all'); });
+
+</script>
+
+</body>
+</html>
