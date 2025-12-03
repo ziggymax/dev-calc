@@ -18,8 +18,12 @@
             --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
             --error-bg: #5a2222;
             --ovf-color: #ff5555;
+            
+            /* Status Line Colors */
             --status-color: #4dff4d; 
             --bit-op-color: #00bfa5; 
+            
+            /* Hint Text Color */
             --hint-color: #8888ff;
         }
 
@@ -47,6 +51,7 @@
             flex-direction: column;
             gap: 15px;
             margin: 20px;
+            position: relative;
         }
 
         .calc-screen {
@@ -83,10 +88,16 @@
         
         .sub-controls {
             display: flex;
-            justify-content: flex-start; 
-            gap: 20px; 
+            justify-content: space-between; 
+            align-items: center;
+            gap: 10px; 
             margin-bottom: 5px;
             padding: 0 2px;
+        }
+        
+        .checks-container {
+            display: flex;
+            gap: 20px;
         }
 
         .cb-label {
@@ -105,6 +116,22 @@
             cursor: pointer;
             accent-color: var(--accent-color);
             transform: scale(1.1); 
+        }
+
+        /* Info Button Style */
+        .btn-info {
+            background: none;
+            border: 1px solid #555;
+            color: #aaa;
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-info:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
         }
 
         .control-group { flex: 1; }
@@ -243,6 +270,80 @@
             font-weight: normal; 
         }
 
+        /* --- Modal Styles --- */
+        .modal-overlay {
+            display: none; 
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-content {
+            background-color: var(--panel-color);
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid #444;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            color: var(--accent-color);
+            text-align: center;
+            font-weight: 400;
+        }
+
+        .prec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.9rem;
+        }
+
+        .prec-table th {
+            text-align: left;
+            border-bottom: 1px solid #444;
+            padding: 8px;
+            color: #888;
+        }
+
+        .prec-table td {
+            padding: 8px;
+            border-bottom: 1px solid #333;
+        }
+
+        .prec-table td:last-child {
+            font-family: var(--font-mono);
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .btn-close-modal {
+            width: 100%;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+        .btn-close-modal:hover {
+            background-color: #2a75cc;
+        }
+
         @media (max-width: 400px) {
             .calculator {
                 margin: 0;
@@ -274,6 +375,42 @@
 </head>
 <body>
 
+<div id="infoModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Operator Info</h3>
+        <p style="font-size: 0.9rem; color: #ccc; text-align: center; margin-bottom: 15px;">
+            Operations are evaluated in the following order (Highest to Lowest):
+        </p>
+        <table class="prec-table">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Operators</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Unary (Immediate)</td>
+                    <td>NOT, +/-</td>
+                </tr>
+                <tr>
+                    <td>Multiplicative</td>
+                    <td>×, ÷</td>
+                </tr>
+                <tr>
+                    <td>Additive</td>
+                    <td>+, -</td>
+                </tr>
+                <tr>
+                    <td>Bitwise Logic</td>
+                    <td>AND, OR, XOR...</td>
+                </tr>
+            </tbody>
+        </table>
+        <button class="btn-close-modal" id="btnCloseModal">Close</button>
+    </div>
+</div>
+
 <div class="calculator">
     <div class="calc-screen">
         <h2>Programmer's Calculator</h2>
@@ -297,12 +434,15 @@
         </div>
 
         <div class="sub-controls">
-            <label class="cb-label">
-                <input type="checkbox" id="cbGrouping"> Grouping
-            </label>
-            <label class="cb-label">
-                <input type="checkbox" id="cbAllBits"> Show all bits
-            </label>
+            <div class="checks-container">
+                <label class="cb-label">
+                    <input type="checkbox" id="cbGrouping"> Grouping
+                </label>
+                <label class="cb-label">
+                    <input type="checkbox" id="cbAllBits"> Show all bits
+                </label>
+            </div>
+            <button class="btn-info" id="btnInfo">Operator info</button>
         </div>
 
         <div class="display-group">
@@ -382,7 +522,16 @@
     const elDec = document.getElementById('decInput');
     const elBin = document.getElementById('binInput');
     const elStatus = document.getElementById('opStatus');
-    const keys = document.querySelectorAll('.keypad button');
+    const keys = document.querySelectorAll('.keypad button[data-val]');
+    
+    /* --- Modal Logic --- */
+    const modal = document.getElementById('infoModal');
+    const btnInfo = document.getElementById('btnInfo');
+    const btnCloseModal = document.getElementById('btnCloseModal');
+
+    btnInfo.onclick = () => { modal.style.display = 'flex'; };
+    btnCloseModal.onclick = () => { modal.style.display = 'none'; };
+    modal.onclick = (e) => { if(e.target === modal) modal.style.display = 'none'; };
 
     /* --- Helpers --- */
     const getMod = () => 1n << BigInt(elBits.value);
@@ -449,6 +598,13 @@
     }
 
     /* --- Input Guards --- */
+    function safeParseBigInt(str, radix) {
+        if(!str || str === '-') return 0n;
+        if(radix === 16) return BigInt("0x" + str);
+        if(radix === 2) return BigInt("0b" + str);
+        return BigInt(str);
+    }
+
     function flashError(el) {
         el.classList.add('input-error');
         setTimeout(() => { el.classList.remove('input-error'); }, 150);
@@ -457,7 +613,7 @@
     function isInputOverflow(strVal, radix) {
         if(!strVal || strVal === '-') return false; 
         try {
-            const val = BigInt(parseInt(strVal, radix));
+            const val = safeParseBigInt(strVal, radix);
             const bits = BigInt(elBits.value);
             
             if (radix === 16 || radix === 2) {
@@ -594,7 +750,7 @@
                 if (!parseStr) currentBigInt = 0n;
             } else {
                 try {
-                    currentBigInt = BigInt(parseInt(parseStr, radix));
+                    currentBigInt = safeParseBigInt(parseStr, radix);
                 } catch(err) {}
             }
 
@@ -625,7 +781,6 @@
     setupInput(elBin, 2);
 
     function updateKeypadState() {
-        // Only target buttons with data-val (numbers and hex)
         const valKeys = document.querySelectorAll('.keypad button[data-val]');
         valKeys.forEach(btn => {
             const char = btn.getAttribute('data-val');
@@ -634,9 +789,7 @@
             if (char === '-') {
                 const decVal = elDec.value;
                 const isSignedMode = elSign.value === 'signed';
-                const valToCheck = errorState ? '' : decVal;
-                allowed = isSignedMode && (activeInputId === 'decInput') && 
-                          (valToCheck !== '0') && (valToCheck !== '') && (valToCheck !== '-');
+                allowed = isSignedMode && (activeInputId === 'decInput');
             }
             if (allowed) btn.classList.remove('disabled');
             else btn.classList.add('disabled');
@@ -654,23 +807,38 @@
             const activeEl = document.getElementById(activeInputId);
             
             let allowed = validChars[activeInputId].includes(char);
+            
             if (char === '-') {
                 const decVal = elDec.value;
                 const isSignedMode = elSign.value === 'signed';
-                allowed = isSignedMode && (activeInputId === 'decInput') && (decVal !== '0') && (decVal !== '');
+                
+                if (activeInputId === 'decInput' && isSignedMode) {
+                    let cur = activeEl.value;
+                    if(cur === '0' || cur === '') {
+                        activeEl.value = '-';
+                    } else if (cur === '-') {
+                        activeEl.value = '';
+                    } else if (cur.startsWith('-')) {
+                        activeEl.value = cur.substring(1);
+                    } else {
+                        activeEl.value = '-' + cur;
+                    }
+                    activeEl.dispatchEvent(new Event('input'));
+                    return; 
+                }
+                allowed = false; 
             }
+            
             if(!allowed) return;
+            
             if(activeEl.value.length >= activeEl.maxLength && char !== '-') {
                  flashError(activeEl); return;
             }
 
             let currentVal = activeEl.value;
             if(currentVal === '0') currentVal = ''; 
-            let candidate = (char === '-') ? 
-                (currentVal.startsWith('-') ? currentVal.substring(1) : '-' + currentVal) : 
-                (currentVal + char);
-
-            if(candidate === '') candidate = '0'; 
+            
+            let candidate = currentVal + char;
 
             let cleanCandidate = candidate.replace(/\s/g, '');
 
@@ -679,11 +847,10 @@
 
             activeEl.value = candidate;
             activeEl.dispatchEvent(new Event('input'));
-            activeEl.focus(); // Keep focus
+            activeEl.focus(); 
         });
     });
     
-    // Attach listeners to other buttons to prevent focus loss
     const opKeys = document.querySelectorAll('.keypad button:not([data-val])');
     opKeys.forEach(btn => {
         btn.addEventListener('mousedown', (e) => e.preventDefault());
@@ -885,9 +1052,32 @@
 
     // Global Key Listener
     document.addEventListener('keydown', (e) => {
+        // Allow Browser Zoom (Ctrl +/-)
+        if (e.ctrlKey || e.metaKey) return;
+
         const key = e.key;
         
-        if (['+', '-', '*', '/'].includes(key)) {
+        // Handle Minus Logic (Unary vs Subtraction)
+        if (key === '-') {
+            const activeEl = document.getElementById(activeInputId);
+            const isDec = activeInputId === 'decInput';
+            const isSigned = elSign.value === 'signed';
+            const isEmptyOrZero = (activeEl.value === '' || activeEl.value === '0');
+            
+            if (isDec && isSigned && isEmptyOrZero) {
+                // Click the +/- button to trigger toggle logic
+                const btnSign = document.querySelector('button[data-val="-"]');
+                if(btnSign) btnSign.click();
+                e.preventDefault();
+                return;
+            }
+            
+            e.preventDefault();
+            setOp('-');
+            return;
+        }
+
+        if (['+', '*', '/'].includes(key)) {
             e.preventDefault();
             setOp(key);
             return;
