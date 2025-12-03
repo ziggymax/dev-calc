@@ -382,7 +382,7 @@
     const elDec = document.getElementById('decInput');
     const elBin = document.getElementById('binInput');
     const elStatus = document.getElementById('opStatus');
-    const keys = document.querySelectorAll('.keypad button[data-val]');
+    const keys = document.querySelectorAll('.keypad button');
 
     /* --- Helpers --- */
     const getMod = () => 1n << BigInt(elBits.value);
@@ -573,7 +573,7 @@
         el.addEventListener('input', (e) => {
             if(errorState) { prepareForNewInput(); }
 
-            let rawVal = el.value.replace(validators[el.id], '').replace(/\s/g, '');
+            let rawVal = el.value.toUpperCase().replace(validators[el.id], '').replace(/\s/g, '');
             
             if (rawVal.length > 1 && rawVal.startsWith('0') && rawVal[1] !== 'x' && rawVal[1] !== 'b') {
                 rawVal = rawVal.substring(1); 
@@ -581,8 +581,8 @@
             if (rawVal === '') rawVal = ''; 
 
             let parseStr = rawVal;
-            if(radix === 16 && parseStr.startsWith('0x')) parseStr = parseStr.substring(2);
-            if(radix === 2 && parseStr.startsWith('0b')) parseStr = parseStr.substring(2);
+            if(radix === 16 && parseStr.startsWith('0X')) parseStr = parseStr.substring(2);
+            if(radix === 2 && parseStr.startsWith('0B')) parseStr = parseStr.substring(2);
 
             if (parseStr !== '' && parseStr !== '-' && isInputOverflow(parseStr, radix)) {
                 el.value = el.getAttribute('data-last') || '';
@@ -625,7 +625,9 @@
     setupInput(elBin, 2);
 
     function updateKeypadState() {
-        keys.forEach(btn => {
+        // Only target buttons with data-val (numbers and hex)
+        const valKeys = document.querySelectorAll('.keypad button[data-val]');
+        valKeys.forEach(btn => {
             const char = btn.getAttribute('data-val');
             let allowed = validChars[activeInputId].includes(char);
             
@@ -641,7 +643,11 @@
         });
     }
 
-    keys.forEach(btn => {
+    // Attach listeners to buttons with data-val (Entries)
+    const valKeys = document.querySelectorAll('.keypad button[data-val]');
+    valKeys.forEach(btn => {
+        btn.addEventListener('mousedown', (e) => e.preventDefault());
+        
         btn.addEventListener('click', () => {
             prepareForNewInput(); 
             const char = btn.getAttribute('data-val');
@@ -673,7 +679,14 @@
 
             activeEl.value = candidate;
             activeEl.dispatchEvent(new Event('input'));
+            activeEl.focus(); // Keep focus
         });
+    });
+    
+    // Attach listeners to other buttons to prevent focus loss
+    const opKeys = document.querySelectorAll('.keypad button:not([data-val])');
+    opKeys.forEach(btn => {
+        btn.addEventListener('mousedown', (e) => e.preventDefault());
     });
 
     function backspace() {
@@ -874,7 +887,6 @@
     document.addEventListener('keydown', (e) => {
         const key = e.key;
         
-        // Map Keys
         if (['+', '-', '*', '/'].includes(key)) {
             e.preventDefault();
             setOp(key);
@@ -892,12 +904,6 @@
             clearAll();
             return;
         }
-        
-        // If focus is NOT in an input (e.g. user clicked a button), 
-        // we might want to allow typing numbers.
-        // But our logic relies on `activeInputId` being set correctly.
-        // If we want seamless typing without focus, we need to route keys to activeInput.
-        // For now, the requested Numpad fix is mostly about operators.
     });
 
 </script>
