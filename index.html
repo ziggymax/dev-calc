@@ -18,12 +18,8 @@
             --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
             --error-bg: #5a2222;
             --ovf-color: #ff5555;
-            
-            /* Status Line Colors */
             --status-color: #4dff4d; 
             --bit-op-color: #00bfa5; 
-            
-            /* Hint Text Color (Bright Blue) */
             --hint-color: #8888ff;
         }
 
@@ -71,11 +67,10 @@
             color: #ccc; 
         }
 
-        /* Updated Hint Style */
         .zoom-hint {
             text-align: center;
             font-size: 0.85rem;
-            color: var(--hint-color); /* Bright Blue */
+            color: var(--hint-color); 
             margin-bottom: 10px;
             font-weight: 500;
         }
@@ -271,7 +266,7 @@
             .calc-screen { flex: 1; justify-content: center; gap: 8px; }
             .calc-pad { flex: 1.2; }
             h2 { display: none; } 
-            .zoom-hint { display: none; } /* Hide hint in compact landscape */
+            .zoom-hint { display: none; } 
             input[type="text"] { padding: 8px 8px 8px 50px; font-size: 1rem; }
             button { padding: 0; font-size: 1rem; }
         }
@@ -613,9 +608,7 @@
             const oldLen = rawVal.length; 
             const newLen = el.value.length;
             if (oldStart !== null && document.activeElement === el) {
-                // Heuristic for cursor placement with spaces
                 if(newLen > oldLen) {
-                    // Added space likely, moving cursor along
                     el.setSelectionRange(oldStart + (newLen - oldLen), oldStart + (newLen - oldLen));
                 } else {
                     el.setSelectionRange(oldStart, oldStart);
@@ -876,6 +869,36 @@
     
     elGrouping.addEventListener('change', () => { if(errorState) clearAll(); else updateInputs('all'); });
     elAllBits.addEventListener('change', () => { if(errorState) clearAll(); else updateInputs('all'); });
+
+    // Global Key Listener
+    document.addEventListener('keydown', (e) => {
+        const key = e.key;
+        
+        // Map Keys
+        if (['+', '-', '*', '/'].includes(key)) {
+            e.preventDefault();
+            setOp(key);
+            return;
+        }
+        
+        if (key === 'Enter' || key === '=') {
+            e.preventDefault();
+            calculate();
+            return;
+        }
+        
+        if (key === 'Escape') {
+            e.preventDefault();
+            clearAll();
+            return;
+        }
+        
+        // If focus is NOT in an input (e.g. user clicked a button), 
+        // we might want to allow typing numbers.
+        // But our logic relies on `activeInputId` being set correctly.
+        // If we want seamless typing without focus, we need to route keys to activeInput.
+        // For now, the requested Numpad fix is mostly about operators.
+    });
 
 </script>
 
