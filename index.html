@@ -19,9 +19,12 @@
             --error-bg: #5a2222;
             --ovf-color: #ff5555;
             
-            /* Bright Green for Status Line */
+            /* Status Line Colors */
             --status-color: #4dff4d; 
             --bit-op-color: #00bfa5; 
+            
+            /* Hint Text Color (Bright Blue) */
+            --hint-color: #8888ff;
         }
 
         body {
@@ -68,12 +71,13 @@
             color: #ccc; 
         }
 
-        /* New Hint Style */
+        /* Updated Hint Style */
         .zoom-hint {
             text-align: center;
-            font-size: 0.8rem;
-            color: #777;
+            font-size: 0.85rem;
+            color: var(--hint-color); /* Bright Blue */
             margin-bottom: 10px;
+            font-weight: 500;
         }
 
         .controls {
@@ -167,13 +171,12 @@
             font-weight: bold;
         }
 
-        /* Updated Status Bar for readability */
         .status-bar {
-            height: 35px; /* Increased height */
+            height: 35px; 
             min-height: 35px;
-            font-size: 1.2rem; /* Larger font */
+            font-size: 1.2rem; 
             text-align: right;
-            color: var(--status-color); /* Bright Green */
+            color: var(--status-color); 
             font-family: var(--font-mono);
             white-space: nowrap;
             overflow: hidden;
@@ -182,18 +185,17 @@
             align-items: center;
             justify-content: flex-end;
             padding-bottom: 2px; 
-            text-shadow: 0 0 5px rgba(77, 255, 77, 0.2); /* Subtle glow */
+            text-shadow: 0 0 5px rgba(77, 255, 77, 0.2); 
         }
         
-        /* Updated Subscript Styling */
         .status-bar sub {
-            font-size: 0.75em; /* Larger subscripts */
+            font-size: 0.75em; 
             vertical-align: baseline; 
             position: relative;
             bottom: -0.3em; 
             margin-left: 2px;
             margin-right: 6px;
-            color: #aaffaa; /* Lighter green for subscripts */
+            color: #aaffaa; 
             font-weight: normal;
             opacity: 0.9;
         }
@@ -280,7 +282,7 @@
 <div class="calculator">
     <div class="calc-screen">
         <h2>Programmer's Calculator</h2>
-        <div class="zoom-hint">Click Ctrl+ Ctrl- or Ctrl-MouseScroll to adjust size</div>
+        <div class="zoom-hint">Use Ctrl+ Ctrl- or Ctrl-MouseScroll to adjust size</div>
 
         <div class="controls">
             <div class="control-group">
@@ -304,7 +306,7 @@
                 <input type="checkbox" id="cbGrouping"> Grouping
             </label>
             <label class="cb-label">
-                <input type="checkbox" id="cbAllBits"> All bits
+                <input type="checkbox" id="cbAllBits"> Show all bits
             </label>
         </div>
 
@@ -611,7 +613,9 @@
             const oldLen = rawVal.length; 
             const newLen = el.value.length;
             if (oldStart !== null && document.activeElement === el) {
+                // Heuristic for cursor placement with spaces
                 if(newLen > oldLen) {
+                    // Added space likely, moving cursor along
                     el.setSelectionRange(oldStart + (newLen - oldLen), oldStart + (newLen - oldLen));
                 } else {
                     el.setSelectionRange(oldStart, oldStart);
@@ -787,6 +791,7 @@
         try {
             let tokens = [...expressionQueue];
             
+            // Pass 1: * /
             for(let i=0; i<tokens.length; i++) {
                 if(tokens[i] === '*' || tokens[i] === '/') {
                     let left = tokens[i-1];
@@ -797,6 +802,7 @@
                 }
             }
 
+            // Pass 2: + -
             for(let i=0; i<tokens.length; i++) {
                 if(tokens[i] === '+' || tokens[i] === '-') {
                     let left = tokens[i-1];
@@ -807,6 +813,7 @@
                 }
             }
             
+            // Pass 3: Bitwise
             for(let i=0; i<tokens.length; i++) {
                 if(['AND', 'OR', 'XOR', 'NAND', 'NOR'].includes(tokens[i])) {
                     let left = tokens[i-1];
