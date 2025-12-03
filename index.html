@@ -956,6 +956,9 @@
         if (errorState) { clearAll(); return; }
         if (expressionQueue.length === 0 && !waitingForOperand) return;
 
+        // FIXED: Don't push duplicate operand on calculation
+        // The current logic always pushes currentBigInt before starting
+        // This is correct.
         expressionQueue.push({ 
             val: currentBigInt, 
             radix: radixMap[activeInputId] 
@@ -1014,10 +1017,9 @@
             
         } catch(e) {
             errorState = (e === "Div0") ? 'Div0' : 'Ovf';
-            expressionQueue.push({ 
-                val: currentBigInt, 
-                radix: radixMap[activeInputId] 
-            });
+            // FIXED: Do NOT push to queue here. The queue already has the final operand
+            // because we pushed it at the start of calculate().
+            // Pushing again here caused the double display (1D1D) bug.
             updateStatusText({}); 
             updateInputs('all');
         }
@@ -1065,7 +1067,6 @@
             const isEmptyOrZero = (activeEl.value === '' || activeEl.value === '0');
             
             if (isDec && isSigned && isEmptyOrZero) {
-                // Click the +/- button to trigger toggle logic
                 const btnSign = document.querySelector('button[data-val="-"]');
                 if(btnSign) btnSign.click();
                 e.preventDefault();
