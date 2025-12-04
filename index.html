@@ -26,6 +26,9 @@
             --bit-op-color: #00bfa5; 
             --hint-color: #5555ff;
             --btn-op-bg: #282828;
+
+            /* UPDATED FONT STACK: Prioritizes Source Code Pro, falls back gracefully to system defaults */
+            --font-mono: 'Source Code Pro', 'SauceCodePro Nerd Font', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
         }
 
         /* 2. MEDIUM THEME */
@@ -45,7 +48,6 @@
             --status-color: #ffcc66; 
             --status-sub-color: #ffe0a3;
             --bit-op-color: #8fa1b3;
-            /* UPDATED: Lighter blue for better contrast against dark slate panel */
             --hint-color: #82b1ff; 
             --btn-op-bg: #22303d;
         }
@@ -1066,6 +1068,9 @@
         if (errorState) { clearAll(); return; }
         if (expressionQueue.length === 0 && !waitingForOperand) return;
 
+        // FIXED: Don't push duplicate operand on calculation
+        // The current logic always pushes currentBigInt before starting
+        // This is correct.
         expressionQueue.push({ 
             val: currentBigInt, 
             radix: radixMap[activeInputId] 
@@ -1124,6 +1129,7 @@
             
         } catch(e) {
             errorState = (e === "Div0") ? 'Div0' : 'Ovf';
+            // FIXED: Do NOT push to queue here. The queue already has the final operand
             updateStatusText({}); 
             updateInputs('all');
         }
@@ -1179,7 +1185,8 @@
             const isEmptyOrZero = (activeEl.value === '' || activeEl.value === '0');
             
             if (isDec && isSigned && isEmptyOrZero) {
-                if(signBtn && !signBtn.classList.contains('disabled')) signBtn.click();
+                const btnSign = document.querySelector('button[data-action="sign"]');
+                if(btnSign && !btnSign.classList.contains('disabled')) btnSign.click();
                 e.preventDefault();
                 return;
             }
